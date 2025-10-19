@@ -36,6 +36,15 @@ const InvitationForm = () => {
 
   const [groomFamily, setGroomFamily] = useState<{ name: string; relation: string }[]>([]);
   const [brideFamily, setBrideFamily] = useState<{ name: string; relation: string }[]>([]);
+  const [ceremonies, setCeremonies] = useState<Array<{
+    title: string;
+    date: string;
+    time: string;
+    venue_name: string;
+    venue_address: string;
+    map_link: string;
+    image_url: string;
+  }>>([]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -85,6 +94,15 @@ const InvitationForm = () => {
         
         setGroomFamily(Array.isArray(data.groom_family) ? data.groom_family as Array<{ name: string; relation: string }> : []);
         setBrideFamily(Array.isArray(data.bride_family) ? data.bride_family as Array<{ name: string; relation: string }> : []);
+        setCeremonies(Array.isArray(data.ceremonies) ? data.ceremonies as Array<{
+          title: string;
+          date: string;
+          time: string;
+          venue_name: string;
+          venue_address: string;
+          map_link: string;
+          image_url: string;
+        }> : []);
       }
     } catch (error: any) {
       toast.error("Failed to load invitation");
@@ -147,6 +165,7 @@ const InvitationForm = () => {
         ...formData,
         groom_family: groomFamily,
         bride_family: brideFamily,
+        ceremonies: ceremonies,
         wedding_date: new Date(formData.wedding_date).toISOString(),
       };
 
@@ -192,6 +211,41 @@ const InvitationForm = () => {
     const setter = side === 'groom' ? setGroomFamily : setBrideFamily;
     const family = side === 'groom' ? groomFamily : brideFamily;
     setter(family.filter((_, i) => i !== index));
+  };
+
+  const addCeremony = () => {
+    setCeremonies(prev => [...prev, {
+      title: "",
+      date: "",
+      time: "",
+      venue_name: "",
+      venue_address: "",
+      map_link: "",
+      image_url: "",
+    }]);
+  };
+
+  const updateCeremony = (index: number, field: string, value: string) => {
+    const updated = [...ceremonies];
+    updated[index] = { ...updated[index], [field]: value };
+    setCeremonies(updated);
+  };
+
+  const removeCeremony = (index: number) => {
+    setCeremonies(ceremonies.filter((_, i) => i !== index));
+  };
+
+  const uploadCeremonyImage = async (file: File, index: number) => {
+    setUploading(true);
+    try {
+      const url = await uploadImage(file);
+      updateCeremony(index, 'image_url', url);
+      toast.success("Ceremony image uploaded");
+    } catch (error) {
+      toast.error("Failed to upload image");
+    } finally {
+      setUploading(false);
+    }
   };
 
   if (loading && isEditing) {
@@ -421,6 +475,113 @@ const InvitationForm = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-soft">
+            <CardHeader>
+              <CardTitle>Wedding Ceremonies</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">Add multiple ceremonies like Mehendi, Sangeet, Wedding, Reception, etc.</p>
+                  <Button type="button" variant="outline" onClick={addCeremony}>
+                    Add Ceremony
+                  </Button>
+                </div>
+                
+                {ceremonies.map((ceremony, idx) => (
+                  <Card key={idx} className="p-4 bg-muted/30">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-semibold">Ceremony {idx + 1}</h4>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removeCeremony(idx)}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Title</Label>
+                        <Input
+                          value={ceremony.title}
+                          onChange={(e) => updateCeremony(idx, 'title', e.target.value)}
+                          placeholder="e.g., Mehendi Ceremony"
+                        />
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Date</Label>
+                          <Input
+                            type="date"
+                            value={ceremony.date}
+                            onChange={(e) => updateCeremony(idx, 'date', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Time</Label>
+                          <Input
+                            value={ceremony.time}
+                            onChange={(e) => updateCeremony(idx, 'time', e.target.value)}
+                            placeholder="e.g., 4:00 PM"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Venue Name</Label>
+                        <Input
+                          value={ceremony.venue_name}
+                          onChange={(e) => updateCeremony(idx, 'venue_name', e.target.value)}
+                          placeholder="e.g., Hyatt Regency Delhi"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Venue Address</Label>
+                        <Textarea
+                          value={ceremony.venue_address}
+                          onChange={(e) => updateCeremony(idx, 'venue_address', e.target.value)}
+                          placeholder="Full address"
+                          rows={2}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Google Maps Link</Label>
+                        <Input
+                          value={ceremony.map_link}
+                          onChange={(e) => updateCeremony(idx, 'map_link', e.target.value)}
+                          placeholder="https://www.google.com/maps/..."
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Ceremony Image</Label>
+                        <div className="border-2 border-dashed border-border rounded-lg p-4">
+                          {ceremony.image_url ? (
+                            <div className="space-y-2">
+                              <img src={ceremony.image_url} alt={ceremony.title} className="max-h-32 mx-auto rounded" />
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => e.target.files?.[0] && uploadCeremonyImage(e.target.files[0], idx)}
+                              />
+                            </div>
+                          ) : (
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => e.target.files?.[0] && uploadCeremonyImage(e.target.files[0], idx)}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
               </div>
             </CardContent>
           </Card>

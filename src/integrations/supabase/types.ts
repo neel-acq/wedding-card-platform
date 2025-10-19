@@ -19,6 +19,7 @@ export type Database = {
           background_music_url: string | null
           bride_family: Json | null
           bride_name: string
+          ceremonies: Json | null
           cover_image_url: string | null
           created_at: string | null
           gallery_images: string[] | null
@@ -44,6 +45,7 @@ export type Database = {
           background_music_url?: string | null
           bride_family?: Json | null
           bride_name: string
+          ceremonies?: Json | null
           cover_image_url?: string | null
           created_at?: string | null
           gallery_images?: string[] | null
@@ -69,6 +71,7 @@ export type Database = {
           background_music_url?: string | null
           bride_family?: Json | null
           bride_name?: string
+          ceremonies?: Json | null
           cover_image_url?: string | null
           created_at?: string | null
           gallery_images?: string[] | null

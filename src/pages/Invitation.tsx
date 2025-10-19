@@ -8,6 +8,7 @@ import LoveStorySection from "@/components/LoveStorySection";
 import FamilySection from "@/components/FamilySection";
 import GallerySection from "@/components/GallerySection";
 import VenueSection from "@/components/VenueSection";
+import CeremoniesSection from "@/components/CeremoniesSection";
 
 interface Invitation {
   id: string;
@@ -30,6 +31,15 @@ interface Invitation {
   template_type: string;
   theme_color: string;
   background_music_url: string | null;
+  ceremonies: Array<{
+    title: string;
+    date: string;
+    time: string;
+    venue_name: string;
+    venue_address: string;
+    map_link?: string;
+    image_url?: string;
+  }> | null;
 }
 
 const Invitation = () => {
@@ -53,7 +63,7 @@ const Invitation = () => {
         if (error || !data) {
           setNotFound(true);
         } else {
-          setInvitation(data);
+          setInvitation(data as unknown as Invitation);
         }
       } catch (error) {
         console.error("Error fetching invitation:", error);
@@ -139,6 +149,11 @@ const Invitation = () => {
           story={invitation.love_story}
           images={invitation.love_story_images || []}
         />
+      )}
+
+      {/* Ceremonies Section */}
+      {invitation.ceremonies && invitation.ceremonies.length > 0 && (
+        <CeremoniesSection ceremonies={invitation.ceremonies} />
       )}
 
       {/* Venue Section */}
