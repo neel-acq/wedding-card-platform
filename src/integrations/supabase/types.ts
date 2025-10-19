@@ -35,6 +35,7 @@ export type Database = {
           theme_color: string | null
           updated_at: string | null
           venue_address: string
+          venue_map_embed_link: string | null
           venue_map_link: string | null
           venue_name: string
           video_url: string | null
@@ -61,6 +62,7 @@ export type Database = {
           theme_color?: string | null
           updated_at?: string | null
           venue_address: string
+          venue_map_embed_link?: string | null
           venue_map_link?: string | null
           venue_name: string
           video_url?: string | null
@@ -87,6 +89,7 @@ export type Database = {
           theme_color?: string | null
           updated_at?: string | null
           venue_address?: string
+          venue_map_embed_link?: string | null
           venue_map_link?: string | null
           venue_name?: string
           video_url?: string | null

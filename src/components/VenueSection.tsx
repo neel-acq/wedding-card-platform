@@ -5,9 +5,10 @@ interface VenueSectionProps {
   venueName: string;
   address: string;
   mapLink: string | null;
+  mapEmbedLink: string | null;
 }
 
-const VenueSection = ({ venueName, address, mapLink }: VenueSectionProps) => {
+const VenueSection = ({ venueName, address, mapLink, mapEmbedLink }: VenueSectionProps) => {
   return (
     <section className="py-20 px-4 bg-muted/20">
       <div className="max-w-5xl mx-auto">
@@ -44,10 +45,10 @@ const VenueSection = ({ venueName, address, mapLink }: VenueSectionProps) => {
             )}
           </div>
           
-          {mapLink && (
+          {mapEmbedLink && (
             <div className="relative w-full h-[400px] rounded-2xl overflow-hidden shadow-elegant">
               <iframe
-                src={mapLink}
+                src={mapEmbedLink}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

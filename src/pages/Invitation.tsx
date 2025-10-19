@@ -20,6 +20,7 @@ interface Invitation {
   venue_name: string;
   venue_address: string;
   venue_map_link: string | null;
+  venue_map_embed_link: string | null;
   cover_image_url: string | null;
   love_story: string | null;
   love_story_images: string[] | null;
@@ -158,9 +159,10 @@ const Invitation = () => {
 
       {/* Venue Section */}
       <VenueSection 
-        venueName={invitation.venue_name}
+        venueName={invitation.venue_name} 
         address={invitation.venue_address}
         mapLink={invitation.venue_map_link}
+        mapEmbedLink={invitation.venue_map_embed_link}
       />
 
       {/* Family Section */}
