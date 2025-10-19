@@ -47,7 +47,7 @@ const VenueSection = ({ venueName, address, mapLink }: VenueSectionProps) => {
           {mapLink && (
             <div className="relative w-full h-[400px] rounded-2xl overflow-hidden shadow-elegant">
               <iframe
-                src={mapLink.replace('/maps/', '/maps/embed/')}
+                src={mapLink}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
