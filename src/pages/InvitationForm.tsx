@@ -27,6 +27,7 @@ const InvitationForm = () => {
     venue_name: "",
     venue_address: "",
     venue_map_link: "",
+    venue_map_embed_link: "",
     cover_image_url: "",
     love_story: "",
     thank_you_message: "",
@@ -85,6 +86,7 @@ const InvitationForm = () => {
           venue_name: data.venue_name || "",
           venue_address: data.venue_address || "",
           venue_map_link: data.venue_map_link || "",
+          venue_map_embed_link: data.venue_map_embed_link || "",
           cover_image_url: data.cover_image_url || "",
           love_story: data.love_story || "",
           thank_you_message: data.thank_you_message || "",
@@ -362,13 +364,25 @@ const InvitationForm = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="venue_map_link">Google Maps Link</Label>
+                <Label htmlFor="venue_map_link">Google Maps Link (for "Get Directions" button)</Label>
                 <Input
                   id="venue_map_link"
                   value={formData.venue_map_link}
                   onChange={(e) => setFormData(prev => ({ ...prev, venue_map_link: e.target.value }))}
                   placeholder="https://www.google.com/maps/..."
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="venue_map_embed_link">Google Maps Embed Link (for map display)</Label>
+                <Input
+                  id="venue_map_embed_link"
+                  value={formData.venue_map_embed_link}
+                  onChange={(e) => setFormData(prev => ({ ...prev, venue_map_embed_link: e.target.value }))}
+                  placeholder="https://www.google.com/maps/embed?pb=..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Get embed link: Google Maps → Share → Embed a map → Copy HTML (use the src URL)
+                </p>
               </div>
             </CardContent>
           </Card>
