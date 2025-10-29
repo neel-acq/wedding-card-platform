@@ -7,9 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save, Loader2, Upload, X } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Upload, X, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const InvitationForm = () => {
   const navigate = useNavigate();
@@ -237,6 +240,34 @@ const InvitationForm = () => {
     setCeremonies(ceremonies.filter((_, i) => i !== index));
   };
 
+  const handleCeremonyDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = ceremonies.findIndex((_, i) => i === Number(active.id));
+      const newIndex = ceremonies.findIndex((_, i) => i === Number(over.id));
+      setCeremonies(arrayMove(ceremonies, oldIndex, newIndex));
+    }
+  };
+
+  const handleFamilyDragEnd = (side: 'groom' | 'bride') => (event: DragEndEvent) => {
+    const { active, over } = event;
+    const family = side === 'groom' ? groomFamily : brideFamily;
+    const setter = side === 'groom' ? setGroomFamily : setBrideFamily;
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = family.findIndex((_, i) => i === Number(active.id));
+      const newIndex = family.findIndex((_, i) => i === Number(over.id));
+      setter(arrayMove(family, oldIndex, newIndex));
+    }
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const uploadCeremonyImage = async (file: File, index: number) => {
     setUploading(true);
     try {
@@ -442,25 +473,21 @@ const InvitationForm = () => {
                     Add Member
                   </Button>
                 </div>
-                <div className="space-y-3">
-                  {groomFamily.map((member, idx) => (
-                    <div key={idx} className="flex gap-2">
-                      <Input
-                        placeholder="Name"
-                        value={member.name}
-                        onChange={(e) => updateFamilyMember('groom', idx, 'name', e.target.value)}
-                      />
-                      <Input
-                        placeholder="Relation"
-                        value={member.relation}
-                        onChange={(e) => updateFamilyMember('groom', idx, 'relation', e.target.value)}
-                      />
-                      <Button type="button" variant="ghost" size="icon" onClick={() => removeFamilyMember('groom', idx)}>
-                        <X className="w-4 h-4" />
-                      </Button>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleFamilyDragEnd('groom')}>
+                  <SortableContext items={groomFamily.map((_, i) => i)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-3">
+                      {groomFamily.map((member, idx) => (
+                        <SortableFamilyItem
+                          key={idx}
+                          id={idx}
+                          member={member}
+                          onUpdate={(field, value) => updateFamilyMember('groom', idx, field, value)}
+                          onRemove={() => removeFamilyMember('groom', idx)}
+                        />
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </SortableContext>
+                </DndContext>
               </div>
 
               <div>
@@ -470,25 +497,21 @@ const InvitationForm = () => {
                     Add Member
                   </Button>
                 </div>
-                <div className="space-y-3">
-                  {brideFamily.map((member, idx) => (
-                    <div key={idx} className="flex gap-2">
-                      <Input
-                        placeholder="Name"
-                        value={member.name}
-                        onChange={(e) => updateFamilyMember('bride', idx, 'name', e.target.value)}
-                      />
-                      <Input
-                        placeholder="Relation"
-                        value={member.relation}
-                        onChange={(e) => updateFamilyMember('bride', idx, 'relation', e.target.value)}
-                      />
-                      <Button type="button" variant="ghost" size="icon" onClick={() => removeFamilyMember('bride', idx)}>
-                        <X className="w-4 h-4" />
-                      </Button>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleFamilyDragEnd('bride')}>
+                  <SortableContext items={brideFamily.map((_, i) => i)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-3">
+                      {brideFamily.map((member, idx) => (
+                        <SortableFamilyItem
+                          key={idx}
+                          id={idx}
+                          member={member}
+                          onUpdate={(field, value) => updateFamilyMember('bride', idx, field, value)}
+                          onRemove={() => removeFamilyMember('bride', idx)}
+                        />
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </SortableContext>
+                </DndContext>
               </div>
             </CardContent>
           </Card>
@@ -506,96 +529,21 @@ const InvitationForm = () => {
                   </Button>
                 </div>
                 
-                {ceremonies.map((ceremony, idx) => (
-                  <Card key={idx} className="p-4 bg-muted/30">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-semibold">Ceremony {idx + 1}</h4>
-                      <Button type="button" variant="ghost" size="sm" onClick={() => removeCeremony(idx)}>
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Title</Label>
-                        <Input
-                          value={ceremony.title}
-                          onChange={(e) => updateCeremony(idx, 'title', e.target.value)}
-                          placeholder="e.g., Mehendi Ceremony"
-                        />
-                      </div>
-
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Date</Label>
-                          <Input
-                            type="date"
-                            value={ceremony.date}
-                            onChange={(e) => updateCeremony(idx, 'date', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Time</Label>
-                          <Input
-                            value={ceremony.time}
-                            onChange={(e) => updateCeremony(idx, 'time', e.target.value)}
-                            placeholder="e.g., 4:00 PM"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Venue Name</Label>
-                        <Input
-                          value={ceremony.venue_name}
-                          onChange={(e) => updateCeremony(idx, 'venue_name', e.target.value)}
-                          placeholder="e.g., Hyatt Regency Delhi"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Venue Address</Label>
-                        <Textarea
-                          value={ceremony.venue_address}
-                          onChange={(e) => updateCeremony(idx, 'venue_address', e.target.value)}
-                          placeholder="Full address"
-                          rows={2}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Google Maps Link</Label>
-                        <Input
-                          value={ceremony.map_link}
-                          onChange={(e) => updateCeremony(idx, 'map_link', e.target.value)}
-                          placeholder="https://www.google.com/maps/..."
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Ceremony Image</Label>
-                        <div className="border-2 border-dashed border-border rounded-lg p-4">
-                          {ceremony.image_url ? (
-                            <div className="space-y-2">
-                              <img src={ceremony.image_url} alt={ceremony.title} className="max-h-32 mx-auto rounded" />
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => e.target.files?.[0] && uploadCeremonyImage(e.target.files[0], idx)}
-                              />
-                            </div>
-                          ) : (
-                            <Input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => e.target.files?.[0] && uploadCeremonyImage(e.target.files[0], idx)}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCeremonyDragEnd}>
+                  <SortableContext items={ceremonies.map((_, i) => i)} strategy={verticalListSortingStrategy}>
+                    {ceremonies.map((ceremony, idx) => (
+                      <SortableCeremonyItem
+                        key={idx}
+                        id={idx}
+                        ceremony={ceremony}
+                        ceremonyNumber={idx + 1}
+                        onUpdate={(field, value) => updateCeremony(idx, field, value)}
+                        onRemove={() => removeCeremony(idx)}
+                        onImageUpload={(file) => uploadCeremonyImage(file, idx)}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
               </div>
             </CardContent>
           </Card>
@@ -664,6 +612,157 @@ const InvitationForm = () => {
         </form>
       </div>
     </div>
+  );
+};
+
+// Sortable Family Member Component
+const SortableFamilyItem = ({ id, member, onUpdate, onRemove }: {
+  id: number;
+  member: { name: string; relation: string };
+  onUpdate: (field: 'name' | 'relation', value: string) => void;
+  onRemove: () => void;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex gap-2 items-center">
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+        <GripVertical className="w-5 h-5 text-muted-foreground" />
+      </div>
+      <Input
+        placeholder="Name"
+        value={member.name}
+        onChange={(e) => onUpdate('name', e.target.value)}
+      />
+      <Input
+        placeholder="Relation"
+        value={member.relation}
+        onChange={(e) => onUpdate('relation', e.target.value)}
+      />
+      <Button type="button" variant="ghost" size="icon" onClick={onRemove}>
+        <X className="w-4 h-4" />
+      </Button>
+    </div>
+  );
+};
+
+// Sortable Ceremony Component
+const SortableCeremonyItem = ({ id, ceremony, ceremonyNumber, onUpdate, onRemove, onImageUpload }: {
+  id: number;
+  ceremony: any;
+  ceremonyNumber: number;
+  onUpdate: (field: string, value: string) => void;
+  onRemove: () => void;
+  onImageUpload: (file: File) => void;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <Card ref={setNodeRef} style={style} className="p-4 bg-muted/30">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+            <GripVertical className="w-5 h-5 text-muted-foreground" />
+          </div>
+          <h4 className="font-semibold">Ceremony {ceremonyNumber}</h4>
+        </div>
+        <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+      
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Title</Label>
+          <Input
+            value={ceremony.title}
+            onChange={(e) => onUpdate('title', e.target.value)}
+            placeholder="e.g., Mehendi Ceremony"
+          />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Date</Label>
+            <Input
+              type="date"
+              value={ceremony.date}
+              onChange={(e) => onUpdate('date', e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Time</Label>
+            <Input
+              value={ceremony.time}
+              onChange={(e) => onUpdate('time', e.target.value)}
+              placeholder="e.g., 4:00 PM"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Venue Name</Label>
+          <Input
+            value={ceremony.venue_name}
+            onChange={(e) => onUpdate('venue_name', e.target.value)}
+            placeholder="e.g., Hyatt Regency Delhi"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Venue Address</Label>
+          <Textarea
+            value={ceremony.venue_address}
+            onChange={(e) => onUpdate('venue_address', e.target.value)}
+            placeholder="Full address"
+            rows={2}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Google Maps Link</Label>
+          <Input
+            value={ceremony.map_link}
+            onChange={(e) => onUpdate('map_link', e.target.value)}
+            placeholder="https://www.google.com/maps/..."
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Ceremony Image</Label>
+          <div className="border-2 border-dashed border-border rounded-lg p-4">
+            {ceremony.image_url ? (
+              <div className="space-y-2">
+                <img src={ceremony.image_url} alt={ceremony.title} className="max-h-32 mx-auto rounded" />
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => e.target.files?.[0] && onImageUpload(e.target.files[0])}
+                />
+              </div>
+            ) : (
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => e.target.files?.[0] && onImageUpload(e.target.files[0])}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 };
 
