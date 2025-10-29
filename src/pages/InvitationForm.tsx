@@ -49,6 +49,7 @@ const InvitationForm = () => {
     map_link: string;
     image_url: string;
   }>>([]);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -108,6 +109,7 @@ const InvitationForm = () => {
           map_link: string;
           image_url: string;
         }> : []);
+        setGalleryImages(Array.isArray(data.gallery_images) ? data.gallery_images : []);
       }
     } catch (error: any) {
       toast.error("Failed to load invitation");
@@ -171,6 +173,7 @@ const InvitationForm = () => {
         groom_family: groomFamily,
         bride_family: brideFamily,
         ceremonies: ceremonies,
+        gallery_images: galleryImages,
         wedding_date: new Date(formData.wedding_date).toISOString(),
       };
 
@@ -279,6 +282,33 @@ const InvitationForm = () => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const onGalleryDrop = async (acceptedFiles: File[]) => {
+    if (acceptedFiles.length === 0) return;
+    
+    setUploading(true);
+    try {
+      const uploadPromises = acceptedFiles.map(file => uploadImage(file));
+      const urls = await Promise.all(uploadPromises);
+      setGalleryImages(prev => [...prev, ...urls]);
+      toast.success(`${acceptedFiles.length} image(s) uploaded to gallery`);
+    } catch (error) {
+      toast.error("Failed to upload images");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const { getRootProps: getGalleryRootProps, getInputProps: getGalleryInputProps } = useDropzone({
+    onDrop: onGalleryDrop,
+    accept: { 'image/*': [] },
+    multiple: true,
+  });
+
+  const removeGalleryImage = (index: number) => {
+    setGalleryImages(prev => prev.filter((_, i) => i !== index));
+    toast.success("Image removed from gallery");
   };
 
   if (loading && isEditing) {
@@ -545,6 +575,53 @@ const InvitationForm = () => {
                   </SortableContext>
                 </DndContext>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-soft">
+            <CardHeader>
+              <CardTitle>Gallery Images</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div
+                {...getGalleryRootProps()}
+                className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
+              >
+                <input {...getGalleryInputProps()} />
+                {uploading ? (
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+                ) : (
+                  <div className="space-y-2">
+                    <Upload className="w-8 h-8 mx-auto text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      Drag & drop images here, or click to select multiple images
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {galleryImages.length > 0 && (
+                <div className="grid grid-cols-3 md:grid-cols-4 gap-4 mt-4">
+                  {galleryImages.map((img, idx) => (
+                    <div key={idx} className="relative group">
+                      <img
+                        src={img}
+                        alt={`Gallery ${idx + 1}`}
+                        className="w-full h-24 object-cover rounded-lg"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeGalleryImage(idx)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
